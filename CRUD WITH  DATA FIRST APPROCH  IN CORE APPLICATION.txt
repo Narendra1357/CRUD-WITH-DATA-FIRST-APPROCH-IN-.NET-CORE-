@@ -1,0 +1,774 @@
+///////////////////////////////////////////
+///CONTROLLER
+
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using NarendraDataFirstCore.DBConn;
+using NarendraDataFirstCore.Models;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace NarendraDataFirstCore.Controllers
+{
+    public class HomeController : Controller
+    {
+        //private readonly ILogger<HomeController> _logger;
+
+        //public HomeController(ILogger<HomeController> logger)
+        //{
+        //    _logger = logger;
+        //}
+
+        //private readonly ApplicationDBContext _Na;
+        //public HomeController(ApplicationDBContext Na)
+        //{
+        //    _Na = Na;
+        //}
+
+        Na_WebApplicationContext dbConn = new Na_WebApplicationContext();
+        public IActionResult Index()
+        {
+            var res = dbConn.Employees.ToList();  
+            return View(res);
+        }
+
+        public IActionResult AddEmp()
+        {
+            return View();
+        }
+        [HttpPost]
+        [AllowAnonymous]
+        public IActionResult AddEmp(Employee obj)
+        {
+            /* //1st step take data and convert into serialize form
+           HttpClient clint = new HttpClient();
+           var adddata = JsonConvert.SerializeObject(obj);
+
+           //step 2- Send data json f, UTF-8,which type of data
+
+           StringContent postData = new StringContent(adddata, System.Text.Encoding.UTF8, "application/json");
+           //Post data to api
+           var result = clint.PostAsync("http://localhost:46045/Api/AddData" + "?Name=" + obj.Name + "&DOB=" + obj.DOB + "&MobileNo=" + obj.MobileNo +
+               "&Email=" + obj.Email + "&Password=" + obj.Password + "&Address=" + obj.Address + "&ZipCode=" + obj.ZipCode + "&Company=" + obj.Company + "&Salary=" + obj.Salary + "&Id=" + obj.Id, postData).Result;
+              */
+
+
+            if (obj.Id == 0)
+           {
+                dbConn.Employees.Add(obj);
+                dbConn.SaveChanges();
+           }
+           else
+           {
+                dbConn.Entry(obj).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+                dbConn.SaveChanges();
+           }
+         
+            return RedirectToAction("Index");
+
+        }
+        public IActionResult Edit(int Id)
+        {
+            var edit = dbConn.Employees.Where(m => m.Id == Id).First();
+            return View("AddEmp", edit);
+
+            //HttpClient clint = new HttpClient();
+            //var editdata = clint.GetAsync("http://localhost:46045/Api/Edit" + "?Id=" + Id).Result;
+
+            //var readData = editdata.Content.ReadAsStringAsync().Result;
+
+            ////3rd step convert json to CLASS OBJECT (razor syntax for view)
+
+            //var empres = JsonConvert.DeserializeObject<Employee>(readData);
+
+            //return View("AddEmp", empres);
+
+
+        }
+        public IActionResult Delete(int Id)
+        {
+            var deleteItem = dbConn.Employees.Where(m => m.Id == Id).First();
+            dbConn.Employees.Remove(deleteItem);
+
+            dbConn.SaveChanges();
+
+            //HttpClient clint = new HttpClient();
+            //var editdata = clint.GetAsync("http://localhost:46045/Api/Delete" + "?Id=" + Id).Result;
+
+            return RedirectToAction("Index");
+        }
+        public IActionResult Privacy()
+        {
+            return View();
+        }
+
+        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        public IActionResult Error()
+        {
+            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
+    }
+}
+
+////////////////////////////////////
+//DATABASE CONNECTION DATA FIRST APPROCH
+
+using System;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
+
+#nullable disable
+
+namespace NarendraDataFirstCore.DBConn
+{
+    public partial class Na_WebApplicationContext : DbContext
+    {
+        public Na_WebApplicationContext()
+        {
+        }
+
+        public Na_WebApplicationContext(DbContextOptions<Na_WebApplicationContext> options)
+            : base(options)
+        {
+        }
+
+        public virtual DbSet<Emp> Emps { get; set; }
+        public virtual DbSet<EmpAddress> EmpAddresses { get; set; }
+        public virtual DbSet<EmpLogin> EmpLogins { get; set; }
+        public virtual DbSet<Employee> Employees { get; set; }
+        public virtual DbSet<Empp> Empps { get; set; }
+        public virtual DbSet<MaDepartment> MaDepartments { get; set; }
+        public virtual DbSet<NewEmp> NewEmps { get; set; }
+        public virtual DbSet<UserInfo> UserInfos { get; set; }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            if (!optionsBuilder.IsConfigured)
+            {
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
+                optionsBuilder.UseSqlServer("Server=CHETUIWK639\\SQLSERVER2019;Database=Na_WebApplication;Trusted_Connection=True;");
+            }
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Emp>(entity =>
+            {
+                entity.ToTable("Emp");
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+
+                entity.Property(e => e.Email)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Name)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<EmpAddress>(entity =>
+            {
+                entity.HasKey(e => e.AddId)
+                    .HasName("PK__EmpAddre__A0E1AD8E224556FD");
+
+                entity.ToTable("EmpAddress");
+
+                entity.Property(e => e.Dist)
+                    .HasMaxLength(25)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Village)
+                    .HasMaxLength(25)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.ZipCode)
+                    .HasMaxLength(25)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<EmpLogin>(entity =>
+            {
+                entity.ToTable("EmpLogin");
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+
+                entity.Property(e => e.Email)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Name)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Password)
+                    .HasMaxLength(55)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<Employee>(entity =>
+            {
+                entity.ToTable("Employee");
+
+                entity.Property(e => e.Address)
+                    .HasMaxLength(55)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Department)
+                    .HasMaxLength(55)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Dob)
+                    .HasMaxLength(15)
+                    .IsUnicode(false)
+                    .HasColumnName("DOB");
+
+                entity.Property(e => e.Name)
+                    .HasMaxLength(55)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.PhoneNo)
+                    .HasMaxLength(55)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.ZipCode)
+                    .HasMaxLength(55)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<Empp>(entity =>
+            {
+                entity.ToTable("Empp");
+
+                entity.Property(e => e.Email)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Name)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<MaDepartment>(entity =>
+            {
+                entity.HasKey(e => e.DeptId)
+                    .HasName("PK__MaDepart__014881AEAF984C42");
+
+                entity.ToTable("MaDepartment");
+
+                entity.Property(e => e.DeptId).ValueGeneratedNever();
+
+                entity.Property(e => e.DeptCode)
+                    .HasMaxLength(25)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.DeptName)
+                    .HasMaxLength(25)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<NewEmp>(entity =>
+            {
+                entity.HasKey(e => e.EmpId)
+                    .HasName("PK__NewEmp__AF2DBB99A28CA64D");
+
+                entity.ToTable("NewEmp");
+
+                entity.Property(e => e.Email)
+                    .HasMaxLength(25)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.EmpName)
+                    .HasMaxLength(25)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Gender)
+                    .HasMaxLength(15)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.MobileNo)
+                    .HasMaxLength(25)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Password)
+                    .HasMaxLength(25)
+                    .IsUnicode(false);
+
+                entity.HasOne(d => d.Add)
+                    .WithMany(p => p.NewEmps)
+                    .HasForeignKey(d => d.AddId)
+                    .HasConstraintName("FK__NewEmp__AddId__5224328E");
+
+                entity.HasOne(d => d.Dept)
+                    .WithMany(p => p.NewEmps)
+                    .HasForeignKey(d => d.DeptId)
+                    .HasConstraintName("FK__NewEmp__DeptId__531856C7");
+            });
+
+            modelBuilder.Entity<UserInfo>(entity =>
+            {
+                entity.ToTable("User_Info");
+
+                entity.Property(e => e.Email)
+                    .HasMaxLength(55)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Password)
+                    .HasMaxLength(55)
+                    .IsUnicode(false);
+            });
+
+            OnModelCreatingPartial(modelBuilder);
+        }
+
+        partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
+    }
+}
+--------------------------------------------------------------------
+///////// MODEL
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace NarendraDataFirstCore.Models
+{
+    public class EmpModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Department { get; set; }
+        public string Dob { get; set; }
+        public string Address { get; set; }
+        public string ZipCode { get; set; }
+        public int? Salary { get; set; }
+        public string PhoneNo { get; set; }
+    }
+}
+-----------------------------------------------
+///////////// VIEWS ////////////////////////
+/// AddEmp.CSHTML
+-------------------------------------
+
+@model NarendraDataFirstCore.DBConn.Employee
+
+@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+<style>
+    label {
+        color: black;
+    }
+</style>
+  
+    <div asp-validation-summary="All">
+        <form asp-action="AddEmp" asp-controller="Home" method="post">
+            <div>
+                <input type="hidden" asp-for="Id" />
+            </div>
+            <div class="form-group">
+                <label style="color:red">*</label><label>Enter your full Name</label>
+                <input asp-for="Name" class="form-control" type="text" data-val="true" data-val-required="Please fill your  name..." placeholder="Enter Name here">
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label style="color:red">*</label><label>Enter your DOB</label>
+                <input asp-for="Dob" class="form-control" type="date" placeholder="Enter Date of birth here">
+                <span asp-validation-for="Dob" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label style="color:red">*</label><label>Enter your Mobile No.</label>
+                <input asp-for="PhoneNo" class="form-control" type="text" placeholder=" Enter mobile no here">
+
+            </div>
+            @*<div class="form-group">
+            <label style="color:red">*</label><label>Enter your full Email</label>
+            <input asp-for="Email" class="form-control" type="text" placeholder="Enter Email here">
+             <span asp-validation-for="Email" class="text-danger"></span><br />
+        </div>
+        <div class="form-group">
+            <label style="color:red">*</label><label>Enter your Password</label>
+            <input asp-for="Password" class="form-control" type="password" placeholder="Enter password here">
+              <span asp-validation-for="Password" class="text-danger"></span><br />
+        </div>*@
+            <div class="form-group">
+                <label style="color:red">*</label><label>Enter your full Address</label>
+                <input asp-for="Address" class="form-control" type="text" placeholder="Enter Address here">
+            </div>
+            <div class="form-group">
+                <label>Enter your  ZipCode</label>
+                <input asp-for="ZipCode" class="form-control" type="text" placeholder="Enter ZipCode here">
+            </div>
+            <div class="form-group">
+                <label style="color:red">*</label><label>Enter your Departmentfull Name</label>
+                <input asp-for="Department" class="form-control" type="text" placeholder="Enter Company here">
+            </div>
+            <div class="form-group">
+                <label>Enter your salary</label>
+                <input asp-for="Salary" class="form-control" type="text" placeholder="Enter salary here">
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+            <div>
+                <span asp-validation-for="PhoneNo" class="text-danger"></span><br /> 
+                <span asp-validation-for="Address" class="text-danger"></span><br />
+                <span asp-validation-for="Department" class="text-danger"></span><br />
+            </div>
+        </form>
+        <div class="tex">
+            <h2 style="color:blue">If you are Alrady registered then <a href="http://localhost:4213/Home/Login" class="text-danger">Click Here</a> for Login..</h2>
+        </div>
+    </div>
+=============================================================
+/// DATA SHOW////////
+
+@model List<NarendraDataFirstCore.DBConn.Employee>
+
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+ 
+
+@*<partial name="Session">*@
+    <h6>This page is working</h6>
+    <h5>Your All data </h5>
+    <table class="table table-bordered">
+        <tr>
+            <th>id</th>
+            <th>name</th>
+            <th>Dob</th>
+            <th>mobileNo</th> 
+            <th>Address</th>
+            <th>ZipCode</th>
+            <th>Department</th>
+            <th>Salary</th>
+            <th>Edit</th>
+            <th>Delete</th>
+        </tr>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Id</td>
+                <td>@item.Name</td>
+                <td>@item.Dob</td>
+                <td>@item.PhoneNo</td> 
+                <td>@item.Address</td>
+                <td>@item.ZipCode</td>
+                <td>@item.Department</td>
+                <td>@item.Salary</td>
+                <td><a class="btn btn-primary" asp-controller="Home" asp-action="Edit" asp-route-id="@item.Id">Edit</a></td>
+                <td><a class="btn btn-danger" asp-controller="Home" asp-action="Delete" asp-route-id="@item.Id">Delete</a></td>
+            </tr>
+        }
+    </table>
+
+=========================================================
+///// Startup //////
+
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace NarendraDataFirstCore
+{
+    public class Startup
+    {
+        public Startup(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
+
+        public IConfiguration Configuration { get; }
+
+        // This method gets called by the runtime. Use this method to add services to the container.
+        public void ConfigureServices(IServiceCollection services)
+        {
+            services.AddControllersWithViews();
+        }
+
+        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        {
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+            else
+            {
+                app.UseExceptionHandler("/Home/Error");
+            }
+            app.UseStaticFiles();
+
+            app.UseRouting();
+
+            app.UseAuthorization();
+
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllerRoute(
+                    name: "default",
+                    pattern: "{controller=Home}/{action=Index}/{id?}");
+            });
+        }
+    }
+}
+
+========================================================================
+///// LAYOUT /////
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - NarendraDataFirstCore</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">NarendraDataFirstCore</a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <a href="D:\narendra\NarendraDataFirstCore\Views\Shared\_Layout.cshtml">D:\narendra\NarendraDataFirstCore\Views\Shared\_Layout.cshtml</a>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2023 - NarendraDataFirstCore - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        </div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+
+
+  
+----------------------------------------------------------------
+//////////////////
+//DATABASE
+
+
+
+ use Na_WebApplication;
+
+create Table Employee(Id int NOT NULL IDENTITY(100,1) PRIMARY KEY,
+Name varchar(55),Department varchar(55),DOB varchar(15),
+Address varchar(55),ZipCode varchar(55),Salary int);
+
+select*from Employee;
+select* from INFORMATION_SCHEMA.TABLES
+delete from employee where id=100; 
+insert into employee values( 'Rohan','MCA','2/09/2003','Ghazipur','275206',22451,'9897869'),
+( 'Mohan','B.Tech','2/7/2001','Noida','27545',14655),
+( 'Syam','MCA','23/6/2000','Delhi','105001',18150);
+select * from employee
+create table EmpLogin(Id int not null primary Key, Name varchar(50),Email varchar(50),
+Password varchar(55));
+drop table empLogin
+select * from EmpLogin
+
+alter table employee add PhoneNo varchar(55);
+
+insert into EmpLogin values(54,'narendra','narendra@gmail.com','na1234556')
+
+create table Empp(Id int not null identity(101,2) primary Key, Name varchar(50),Email varchar(50))
+insert into empp( name,email) values(  'endra','endra@gmail.com');
+
+delete from employee where id=118;
+
+set identity_insert empp on; 
+
+set identity_insert empp off;
+select*from empp;
+
+select*from INFORMATION_SCHEMA.TABLES
+
+select*from Employee ;
+sp_help employee
+ 
+-------------------------------------------------
+create table User_Info(Id int identity (101,1) primary key,
+Email varchar(55),Password varchar(55));
+
+select * from user_info;
+
+insert into User_Info values('narendra@gmail.com','nare@123'),('mahendra@gmail.com','mahe@12'),
+('jitendra@gmail.com','jit@123'),('Raj@gmail.com','raj@123');
+
+select * from emp;
+select * from empLogin;
+
+--//new tables for join with primery key
+CREATE TABLE NewEmp(
+EmpId int primary key identity(101,1),
+EmpName varchar (25),
+Email varchar (25),
+Password varchar (25), 
+AddId int foreign key references EmpAddress(AddId),
+MobileNo varchar(25),
+DeptId int foreign key references MaDepartment(DeptId)
+)
+---------------/////
+CREATE TABLE EmpAddress(
+AddId int primary key identity(201,1),
+Dist varchar (25),
+Village varchar (25),
+ZipCode varchar (25) 
+)
+--------------------////////
+CREATE TABLE MaDepartment(
+DeptId int primary key,
+DeptName varchar (25),
+DeptCode  varchar (25)
+)
+-------
+insert into MaDepartment values (111,'JavaScript','Ja11'),(444,'Php','Ph554')
+
+select * from MaDepartment 
+select * from EmpAddress
+select * from NewEmp
+
+truncate table EmpAddress
+
+truncate table NewEmp
+drop table EmpAddress
+insert into EmpAddress  values('delhi','fgh','122423'),('ghghjh','jgykjh','8i77')
+
+insert into NewEmp values('raj','ra@gmail.com','ra@123','202','93584','333'),
+('sss','ss@gmail.com','s@123','203','93584','444'),('ddd','dd@gmail.com','d@123','203','93584','333')
+
+---delete NewEmp where empid=103;
+--truncate table newemp;
+update newEmp set AddId=204 where EmpId=104;
+------------------------------
+---// Procedure for get data 
+alter proc GetAllData
+As 
+begin
+select E.EmpId,E.EmpName,E.Email,E.Password,E.MobileNo,E.Gender,A.Dist,A.Village,
+A.ZipCode,D.DeptName,D.DeptCode
+from NewEmp as E inner join EmpAddress as A on  A.AddId=E.AddId
+inner join MaDepartment as D on  D.DeptId=E.DeptId
+end;
+-----------
+exec GetAllData
+exec GetAllDataWithId 101
+-----------------
+alter proc GetAllDataWithId (@Id int)
+As 
+begin
+select E.EmpId,E.EmpName,E.Email,E.Password,E.MobileNo,E.Gender,A.Dist,
+A.Village,A.ZipCode,D.DeptName,D.DeptCode
+from NewEmp as E inner join EmpAddress as A on  A.AddId=E.AddId
+inner join MaDepartment as D on  D.DeptId=E.DeptId
+where EmpId=@Id
+end;
+------///////////////
+---// Procedure for Save data into Table
+
+alter proc SaveData(@Name varchar(50),@Email varchar(25),@Password varchar(15),
+@MobileNo varchar(20),@Gender varchar(20),@Dist Varchar(25),@Village varchar(25),@ZipCode varchar(15),
+@DeptName varchar(25))
+As
+Begin 
+declare @AddId int
+declare @DeptId int
+insert into EmpAddress(Dist,Village,ZipCode)
+values(@Dist,@Village,@ZipCode)
+--//for find addid ue use
+select top(1) @AddId = AddId from EmpAddress order by AddId desc
+----//for find deptId
+select @DeptId= DeptId from MaDepartment where DeptName=@DeptName
+insert into NewEmp(EmpName,Email,Password,AddId,MobileNo,Gender, DeptId) 
+values(@Name,@Email,@Password,@AddId,@MobileNo,@Gender,@DeptId)
+End;
+
+---------///////
+select top(1) * from EmpAddress order by addid desc
+select top(1) AddId from EmpAddress order by addid desc
+
+select DeptId from MaDepartment where DeptName='java'
+exec SaveData 'nare','na@gmail.com','n@12','14555','Male','gsshs','miranpur','275201','php'
+
+exec GetAllData
+
+
+create proc GetDwLogin(@Email varchar(25),@pass varchar(25))
+As 
+begin
+select E.EmpId,E.EmpName,E.Email,E.Password,E.MobileNo,E.Gender,A.Dist,
+A.Village,A.ZipCode,D.DeptName,D.DeptCode
+from NewEmp as E inner join EmpAddress as A on  A.AddId=E.AddId
+inner join MaDepartment as D on  D.DeptId=E.DeptId
+where Email=@Email and Password=@pass
+end;
+
+
+exec GetDwLogin 'nare@gmail.com','r@123'
+
+///////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
